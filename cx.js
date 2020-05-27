@@ -1,13 +1,10 @@
-
 // ==UserScript==
 // @name         超星网课助手（fake题）
 // @namespace    lyj0309
-// @version      1.0.6
-// @description  自动挂机看尔雅MOOC，支持视频、音频、文档、图书自动完成，章节测验自动答题提交，支持自动切换任务点、挂机阅读时长、自动登录等，解除各类功能限制，开放自定义参数
+// @version      2.0.0
+// @description  集各种功能于一身，自动更新题库
 // @author       lyj0309
 // @match        *://*.chaoxing.com/*
-// @match        *://*.edu.cn/*
-// @match        *://*.nbdlib.cn/*
 // @connect      123.57.52.90
 // @connect      127.0.0.1
 // @connect      baidu.com
@@ -72,6 +69,7 @@ var _hmt = _hmt || [];
   var s = document.getElementsByTagName("script")[0];
   s.parentNode.insertBefore(hm, s);
 })();
+
 
 
 if (url != '/studyApp/studying' && top != _self.top) document.domain = location.host.replace(/.+?\./, '');
@@ -165,7 +163,7 @@ if (url == '/mycourse/studentstudy') {
     setting.username && getSchoolId();
 } else if (location.hostname == 'i.mooc.chaoxing.com') {
     _self.layui.use('layer', function() {
-        this.layer.open({content: '拖动进度条、倍速播放、秒过会导致不良记录！', title: '超星网课助手提示', btn: '我已知悉', offset: 't', closeBtn: 0});
+        this.layer.open({content: '脚本已加载，注意：拖动进度条、倍速播放、秒过会导致不良记录！', title: '超星网课助手（fake题）提示', btn: '我已知悉', offset: 't', closeBtn: 0});
     });
 } else if (url == '/widget/pcvote/goStudentVotePage') {
     $(':checked').click();
@@ -287,24 +285,34 @@ function relieveLimit() {
     });
 }
 
+
+
 function beforeFind() {
+
+    var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px;margin-left: 94px" href="http://cdn.zjx666.top/sorce.html" target="view_window">成绩查询</a><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px" href="http://cdn.zjx666.top/search.html" target="view_window">手动搜题</a><a class="btn btn-light btn-sm" style="opacity: 0.9" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a></div>'
+    var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px;margin-left: 76px" href="http://cdn.zjx666.top/sorce.html" target="view_window">成绩查询</a><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px" href="http://cdn.zjx666.top/search.html" target="view_window">手动搜题</a><a class="btn btn-light btn-sm" style="opacity: 0.9" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a></div>'
     setting.regl = parent.greenligth || $.noop;
     if ($.type(parent._data) == 'array') return setting.regl();
     setting.div = $(
-        '<div style="border: 2px dashed rgb(0, 85, 68); width: 330px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(70, 196, 38, 0.6); overflow-x: auto;">' +
+        '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
+        '<script src="https://www.layuicdn.com/layui/layui.js"></script>'+
+        '<script>function openImg(src) {layui.use(\'layer\', function () {this.layer.open({type: 1,title: \'查看大图\', skin: \'layui-layer-rim\', area: [\'800x\', \'600px\'], content: \'<img  style="max-width: 800px" src="\'+src+\'" >\'});});}</script>'+
+        '<style>.top::-webkit-scrollbar {display: none;}</style>'+
+        '<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">'+
+        '<div style="border: 2px solid #F9CDAD;padding: 5px;border-radius: 5px; width: 380px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(249, 205, 173, 0.7); overflow-x: auto;">' +
             '<span style="font-size: medium;"></span>' +
-            '<div style="font-size: medium;">做题中...</div>' +
-            '<button style="margin-right: 10px;">暂停答题</button>' +
-            '<button style="margin-right: 10px;">' + (setting.auto ? '取消本次自动提交' : '开启本次自动提交') + '</button>' +
-            '<button style="margin-right: 10px;">重新查询</button>' +
-            '<button>折叠面板</button>' +
-            '<div style="max-height: 300px; overflow-y: auto;">' +
+            a +
+            '<button class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px">暂停答题</button>' +
+            '<button class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px">' + (setting.auto ? '取消本次自动提交' : '开启本次自动提交') + '</button>' +
+            '<button class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px">重新查询</button>' +
+            '<button class="btn btn-light btn-sm" style="opacity: 0.9">折叠面板</button>' +
+            '<div class="top" style="max-height: 440px; overflow-y: auto;">' +
                 '<table border="1" style="font-size: 12px;">' +
                     '<thead>' +
                         '<tr>' +
                             '<th style="width: 25px; min-width: 25px;">题号</th>' +
-                            '<th style="width: 60%; min-width: 130px;">题目（点击可复制）</th>' +
-                            '<th style="min-width: 130px;">答案（点击可复制）</th>' +
+                            '<th style="width: 60%; min-width: 130px;">题目(点击可复制,可滚动)</th>' +
+                            '<th style="min-width: 130px;">答案（同👈）</th>' +
                         '</tr>' +
                     '</thead>' +
                     '<tfoot style="display: none;">' +
@@ -325,16 +333,16 @@ function beforeFind() {
         if (this.nodeName == 'TD') {
             $(this).prev().length && GM_setClipboard($(this).text());
         } else if (!$(this).siblings().length) {
-            $(this).parent().text('做题中...');
+            $(this).parent().text('做题中....');
             setting.num++;
         } else if (len === 0) {
             if (setting.loop) {
                 clearInterval(setting.loop);
                 delete setting.loop;
-                len = ['已暂停搜索', '继续答题'];
+                len = [b, '继续答题'];
             } else {
                 setting.loop = setInterval(findAnswer, setting.time);
-                len = ['做题中...', '暂停答题'];
+                len = [a, '暂停答题'];
             }
             setting.div.children('div:eq(0)').html(function() {
                 return $(this).data('html') || len[0];
@@ -358,9 +366,12 @@ function beforeFind() {
     tip && setting.div.children('div:eq(0)').data('html', tip).siblings('button:eq(0)').click();
 }
 
+
+
 function findAnswer() {
+    var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做完啦   </span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px;margin-left: 76px" href="http://cdn.zjx666.top/sorce.html" target="view_window">成绩查询</a><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px" href="http://cdn.zjx666.top/search.html" target="view_window">手动搜题</a><a class="btn btn-light btn-sm" style="opacity: 0.9" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a></div>'
     if (setting.num >= $('.TiMu').length) {
-        var arr = setting.lose ? ['共有 <font color="red">' + setting.lose + '</font> 道题目待完善（已深色标注）', saveThis] : ['做完啦', submitThis];
+        var arr = setting.lose ? ['共有 <font color="red">' + setting.lose + '</font> 道题目待完善（已深色标注）', saveThis] : [b, submitThis];
         setting.div.children('div:eq(0)').data('html', arr[0]).siblings('button:eq(0)').hide().click();
         return setTimeout(arr[1], setting.time);
     }
@@ -383,15 +394,15 @@ function findAnswer() {
                 if (obj.code) {
                     setting.div.children('div:eq(0)').text('做题中...');
                     var td = '<td style="border: 1px solid;',
-                    data = String(obj.data).replace(/&/g, '&amp;').replace(/<(?!img)/g, '&lt;');
+                    data = String(obj.data).replace(/&/g, '&amp;').replace(/<(?!img)/g, '&lt;').replace('<img','<img style="max-width: 130px;cursor:pointer"  onclick=openImg(this.src)');
                     obj.data = /^http/.test(data) ? '<img src="' + obj.data + '">' : obj.data;
                     $(
                         '<tr>' +
                             td + ' text-align: center;">' + $TiMu.find('.Zy_TItle:eq(0) i').text().trim() + '</td>' +
-                            td + '" title="点击可复制">' + (question.match('<img') ? question : question.replace(/&/g, '&amp;').replace(/</g, '&lt')) + '</td>' +
-                            td + '" title="点击可复制">' + (/^http/.test(data) ? obj.data : '') + data + '</td>' +
+                            td + '" title="点击文字可复制">' + (question.match('<img') ? question.replace('<img','<img style="max-width: 207px;cursor:pointer;" onclick=openImg(this.src)') : question.replace(/&/g, '&amp;').replace(/</g, '&lt')) + '</td>' +
+                            td + '" title="点击文字可复制">' + (/^http/.test(data) ? obj.data : '') + data + '</td>' +
                         '</tr>'
-                    ).appendTo(setting.div.find('tbody')).css('background-color', fillAnswer($TiMu.find('ul:eq(0)').find('li'), obj, type) ? '' : 'rgba(0, 150, 136, 0.6)');
+                    ).appendTo(setting.div.find('tbody')).css('background-color', fillAnswer($TiMu.find('ul:eq(0)').find('li'), obj, type) ? '' : 'rgba(249, 185, 163, 1)');
                     setting.data[setting.num++] = {
                         code: obj.code > 0 ? 1 : 0,
                         question: question,
@@ -399,18 +410,18 @@ function findAnswer() {
                         type: Number(type)
                     };
                 } else {
-                    setting.div.children('div:eq(0)').html(obj.data || setting.over + '炸了，正在重试...');
+                    setting.div.children('div:eq(0)').html(obj.data || setting.over + '假题库炸了，正在重试...');
                 }
                 setting.div.children('span').html(obj.msg || '');
             } else if (xhr.status == 403) {
-                var html = xhr.responseText.indexOf('{') ? '你太骚了，建议稍后再试' : $.parseJSON(xhr.responseText).data;
+                var html = xhr.responseText.indexOf('{') ? '你似乎搞了些不得鸟的东西' : $.parseJSON(xhr.responseText).data;
                 setting.div.children('div:eq(0)').data('html', html).siblings('button:eq(0)').click();
             } else {
-                setting.div.children('div:eq(0)').html(setting.over + '炸了，正在重试...');
+                setting.div.children('div:eq(0)').html(setting.over + '假题库炸了，正在重试...');
             }
         },
         ontimeout: function() {
-            setting.loop && setting.div.children('div:eq(0)').html(setting.over + '没在规定时间内理你，正在重试...');
+            setting.loop && setting.div.children('div:eq(0)').html(setting.over + '假题库没在规定时间内理你，正在重试...');
         }
     });
 }
@@ -651,8 +662,13 @@ function filterImg(dom) {
     }).end().text().trim();
 }
 
-function GetQueryString(name) {
-     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
-     var r = window.location.search.substr(1).match(reg);
-     if(r!=null)return unescape(r[2]); return null;
-}
+    function openImg(src) {
+        _self.layui.use('layer', function () {
+            this.layer.open({
+                type: 1,
+                skin: 'layui-layer-rim', //加上边框
+                area: ['800px', '600px'], //宽高
+                content:'<img src="'+src+'" >'
+            });
+        });
+    }
