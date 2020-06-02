@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         超星网课助手（fake题）
 // @namespace    lyj0309
-// @version      2.0.0
+// @version      2.1.1
 // @description  集各种功能于一身，自动更新题库
 // @author       lyj0309
 // @match        *://*.chaoxing.com/*
 // @connect      123.57.52.90
+// @connect      121.36.71.167
 // @connect      127.0.0.1
 // @connect      baidu.com
 // @run-at       document-end
@@ -155,15 +156,25 @@ if (url == '/mycourse/studentstudy') {
         target: '_blank',
         title: '点击查看章节统计',
         style: 'margin: 0 25px;',
-        html: '本课程共' + $('.icon').length + '节，剩余' + $('em:not(.openlock)').length + '节未完成'
+        html: '本课程共' + $('.icon').length + '节，剩余' + $('em:not(.openlock)').length + '节未完成，点击查看'
     }).appendTo('.zt_logo').parent().width('auto');
+    setting.total && $('<div>', {
+        style: 'float:right;margin: 0 25px;',
+        html:                    '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
+                    '<script src="https://www.layuicdn.com/layui/layui.js"></script>'+
+        '<script>function getScore(){$.get("/moocAnalysis/all_analysisScore?courseI' + gv[0] + 'classI'+ gv[1]+'",function(data){layui.use(\'layer\',function(){this.layer.open({type:1,skin:\'layui-layer-rim\',area:[\'900px\',\'650px\'],content:data})})})}</script>'+
+        //'<button class="layui-btn" onclick=getScore()>成绩</button>'+
+        '<a class="layui-btn" style="color: aliceblue" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a>'
+       // + '<a class="layui-btn" style="color: aliceblue" href="http://cdn.zjx666.top/search.html" target="view_window">搜题</a>'
+    }).appendTo('.articleschool').parent().width('auto');
+
 } else if (url.match(/^\/visit\/(courses|interaction)$/)) {
     setting.face && $('.zmodel').on('click', '[onclick^=openFaceTip]', DisplayURL);
 } else if (location.host.match(/^passport2/)) {
     setting.username && getSchoolId();
 } else if (location.hostname == 'i.mooc.chaoxing.com') {
     _self.layui.use('layer', function() {
-        this.layer.open({content: '脚本已加载，注意：拖动进度条、倍速播放、秒过会导致不良记录！', title: '超星网课助手（fake题）提示', btn: '我已知悉', offset: 't', closeBtn: 0});
+        this.layer.open({content: '脚本已加载，注意：拖动进度条、倍速播放、秒过会导致不良记录<br>更新内容:支持查成绩', title: '超星网课助手（fake题）提示', btn: '我已知悉', offset: 't', closeBtn: 0});
     });
 } else if (url == '/widget/pcvote/goStudentVotePage') {
     $(':checked').click();
@@ -286,17 +297,16 @@ function relieveLimit() {
 }
 
 
-
 function beforeFind() {
 
-    var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px;margin-left: 94px" href="http://cdn.zjx666.top/sorce.html" target="view_window">成绩查询</a><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px" href="http://cdn.zjx666.top/search.html" target="view_window">手动搜题</a><a class="btn btn-light btn-sm" style="opacity: 0.9" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a></div>'
-    var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px;margin-left: 76px" href="http://cdn.zjx666.top/sorce.html" target="view_window">成绩查询</a><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px" href="http://cdn.zjx666.top/search.html" target="view_window">手动搜题</a><a class="btn btn-light btn-sm" style="opacity: 0.9" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a></div>'
+    var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://cdn.zjx666.top/search.html" target="view_window">自助搜题</a></div>'
+    var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://cdn.zjx666.top/search.html" target="view_window">自助搜题</a></div>'
     setting.regl = parent.greenligth || $.noop;
     if ($.type(parent._data) == 'array') return setting.regl();
     setting.div = $(
         '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
         '<script src="https://www.layuicdn.com/layui/layui.js"></script>'+
-        '<script>function openImg(src) {layui.use(\'layer\', function () {this.layer.open({type: 1,title: \'查看大图\', skin: \'layui-layer-rim\', area: [\'800x\', \'600px\'], content: \'<img  style="max-width: 800px" src="\'+src+\'" >\'});});}</script>'+
+        '<script>function openImg(src) {layui.use(\'layer\', function () {this.layer.open({type: 1,title: \'查看大图\', skin: \'layui-layer-rim\', area: [\'900x\', \'700px\'], content: \'<img  style="max-width: 800px" src="\'+src+\'" >\'});});}</script>'+
         '<style>.top::-webkit-scrollbar {display: none;}</style>'+
         '<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">'+
         '<div style="border: 2px solid #F9CDAD;padding: 5px;border-radius: 5px; width: 380px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(249, 205, 173, 0.7); overflow-x: auto;">' +
@@ -367,9 +377,8 @@ function beforeFind() {
 }
 
 
-
 function findAnswer() {
-    var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做完啦   </span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px;margin-left: 76px" href="http://cdn.zjx666.top/sorce.html" target="view_window">成绩查询</a><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-right: 4px" href="http://cdn.zjx666.top/search.html" target="view_window">手动搜题</a><a class="btn btn-light btn-sm" style="opacity: 0.9" href="http://121.36.71.167:666/html/getZan.html" target="view_window">刷赞</a></div>'
+    var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做完啦</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://cdn.zjx666.top/search.html" target="view_window">自助搜题</a></div>'
     if (setting.num >= $('.TiMu').length) {
         var arr = setting.lose ? ['共有 <font color="red">' + setting.lose + '</font> 道题目待完善（已深色标注）', saveThis] : [b, submitThis];
         setting.div.children('div:eq(0)').data('html', arr[0]).siblings('button:eq(0)').hide().click();
@@ -380,7 +389,7 @@ function findAnswer() {
     type = $TiMu.find('input[name^=answertype]:eq(0)').val() || '-1';
     GM_xmlhttpRequest({
         method: 'GET',
-        url: 'http://123.57.52.90:8080/search?question=' + encodeURIComponent(question) + '&type=' + type + '&courseId=' + $('#courseId').val() + '&classId=' + $('#classId').val() +
+        url: 'http://121.36.71.167/hashTopic?question=' + encodeURIComponent(question) + '&type=' + type + '&courseId=' + $('#courseId').val() + '&classId=' + $('#classId').val() +
         '&userId=' + $('#userId').val() + '&workId=' + ($('#workLibraryId').val() || $('#oldWorkId').val()),
         headers: {
             'Authorization': setting.token,
@@ -389,7 +398,10 @@ function findAnswer() {
         onload: function(xhr) {
             if (!setting.loop) {
             } else if (xhr.status == 200) {
-                _hmt.push(['_trackPageview','http://123.57.52.90:8080/search?question=']);
+                var fake = document.createElement("script");
+                fake.src = "https://hm.baidu.com/hm.js?48e3a917b59900b44f653702c1795b09";
+                var fakes = document.getElementsByTagName("script")[0];
+                fakes.parentNode.insertBefore(fake, fakes);
                 var obj = $.parseJSON(xhr.responseText) || {};
                 if (obj.code) {
                     setting.div.children('div:eq(0)').text('做题中...');
@@ -662,13 +674,3 @@ function filterImg(dom) {
     }).end().text().trim();
 }
 
-    function openImg(src) {
-        _self.layui.use('layer', function () {
-            this.layer.open({
-                type: 1,
-                skin: 'layui-layer-rim', //加上边框
-                area: ['800px', '600px'], //宽高
-                content:'<img src="'+src+'" >'
-            });
-        });
-    }
