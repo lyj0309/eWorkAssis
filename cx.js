@@ -1,13 +1,11 @@
 // ==UserScript==
-// @name         超星网课助手（fake题）
+// @name         超星学习通网课助手（fake题）
 // @namespace    lyj
-// @version      2.4.0
+// @version      2.5.0
 // @description  集各种功能于一身，自动更新题库
 // @author       lyj0309
 // @match        *://*.chaoxing.com/*
 // @connect      cx.2333.pub
-// @connect      121.36.71.167
-// @connect      127.0.0.1
 // @connect      baidu.com
 // @run-at       document-end
 // @grant        unsafeWindow
@@ -23,7 +21,6 @@
 var setting = {
     // 5E3 == 5000，科学记数法，表示毫秒数
     time: 4E3 // 默认响应速度为5秒，不建议小于3秒
-    ,token: '' // token可以增加并发次数，用来打码，采集题库奖励
     ,review: 0 // 复习模式，完整挂机视频(音频)时长，支持挂机任务点已完成的视频和音频，默认关闭
     ,queue: 1 // 队列模式，开启后任务点逐一完成，关闭则单页面所有任务点同时进行，默认开启
 
@@ -166,22 +163,36 @@ setting.read && _self.sendLogs && autoRead();
 } else if (url == '/mycourse/studentcourse') {
 var gv = location.search.match(/d=\d+&/g);
 setting.total && $('<div>', {
-    style: 'float:right;margin: 0 25px;',
-    html:                    '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
+    style: 'float:right;margin: 0 25px;display: flex;',
+    html:'<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
         '<script src="https://www.layuicdn.com/layui/layui.js"></script>'+
         '<script>function getScore(){$.get("/moocAnalysis/all_analysisScore?courseI' + gv[0] + 'classI'+ gv[1]+'",function(data){layui.use(\'layer\',function(){this.layer.open({type:1,skin:\'layui-layer-rim\',area:[\'900px\',\'650px\'],content:data})})})}</script>'+
-        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="http://2333.pub/getZan.html" target="view_window">刷赞</a>'+
+     '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="https://qm.qq.com/cgi-bin/qm/qr?k=mP19NiIeVxBraZMsIPktODoh3Sgj_dBc&jump_from=webapi" target="view_window">qq群</a>'+
+        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="http://2333.pub/getZan" target="view_window">刷赞</a>'+
         '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="http://2333.pub" target="view_window">搜题</a>'+
-        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="/moocAnalysis/chapterStatisticByUser?classI' + gv[1] + 'courseI' + gv[0] + 'userId=' + _self.getCookie('_uid') + '&ut=s" target="view_window">学习进度</a>'
-}).appendTo('.articleschool').parent().width('auto');
-
-} else if (url.match(/^\/visit\/(courses|interaction)$/)) {
+        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="/moocAnalysis/chapterStatisticByUser?classI' + gv[1] + 'courseI' + gv[0] + 'userId=' + _self.getCookie('_uid') + '&ut=s" target="view_window">学习进度</a>'+
+    '<div style="font-size: 20px;color: white;margin-left: 20px">fake题官网 ：<a href="https://www.2333.pub">www.2333.pub</a></div>'
+}).appendTo('.zt_logo').parent().width('auto');
+} else if (url == '/mycourse/stu') {
+ gv = location.search.match(/d=\d+&/g);
+setting.total && $('<div>', {
+    style: 'float:right;margin: 0 25px;display: flex;',
+    html:'<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
+        '<script src="https://www.layuicdn.com/layui/layui.js"></script>'+
+        '<script>function getScore(){$.get("/moocAnalysis/all_analysisScore?courseI' + gv[0] + 'classI'+ gv[1]+'",function(data){layui.use(\'layer\',function(){this.layer.open({type:1,skin:\'layui-layer-rim\',area:[\'900px\',\'650px\'],content:data})})})}</script>'+
+     '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="https://qm.qq.com/cgi-bin/qm/qr?k=mP19NiIeVxBraZMsIPktODoh3Sgj_dBc&jump_from=webapi" target="view_window">qq群</a>'+
+        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="http://2333.pub/getZan" target="view_window">刷赞</a>'+
+        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="http://2333.pub" target="view_window">搜题</a>'+
+        '<a class="layui-btn layui-btn-sm" style="color: aliceblue" href="/moocAnalysis/chapterStatisticByUser?classI' + gv[1] + 'courseI' + gv[0] + 'userId=' + _self.getCookie('_uid') + '&ut=s" target="view_window">学习进度</a>'+
+    '<div style="font-size: 20px;color: white;margin-left: 5px">fake题官网 ：<a href="https://www.2333.pub">www.2333.pub</a></div>'
+}).appendTo('.Header').parent().width('auto');
+}else if (url.match(/^\/visit\/(courses|interaction)$/)) {
 setting.face && $('.zmodel').on('click', '[onclick^=openFaceTip]', DisplayURL);
 } else if (location.host.match(/^passport2/)) {
 setting.username && getSchoolId();
-} else if (location.hostname == 'i.mooc.chaoxing.com') {
+} else if (location.hostname == 'i.mooc.chaoxing.com' ||location.hostname == 'i.chaoxing.com') {
 _self.layui.use('layer', function() {
-    this.layer.open({content: '脚本已加载，注意：拖动进度条、倍速播放、秒过会导致不良记录', title: '超星网课助手（fake题）提示', btn: '我已知悉', offset: 't', closeBtn: 0});
+    this.layer.open({content: '脚本已加载，注意：拖动进度条、倍速播放、秒过会导致不良记录<br>fake题官网：<a href="https://www.2333.pub">www.2333.pub</a>', title: '超星网课助手（fake题）提示', btn: '我已知悉', offset: 't', closeBtn: 0});
 });
 } else if (url == '/widget/pcvote/goStudentVotePage') {
 $(':checked').click();
@@ -401,9 +412,6 @@ var $TiMu = $('.TiMu').eq(setting.num),
 GM_xmlhttpRequest({
     method: 'GET',
     url: 'https://cx.2333.pub/hashTopic?question=' + encodeURIComponent(question) + '&type=' + type + '&courseId=' + $('#courseId').val() ,
-    headers: {
-        'Authorization': setting.token,
-    },
     timeout: setting.time,
     onload: function(xhr) {
         if (!setting.loop) {
