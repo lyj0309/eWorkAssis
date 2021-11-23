@@ -1,14 +1,12 @@
 // ==UserScript==
-// @name         超星网课助手(fake题)
+// @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.2.0
-// @description  支持自动答题，支持视频自动完成，章节测验自动答题提交，支持自动切换任务点等，开放自定义参数
+// @version      3.2.6
+// @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
-// @match        *://*.edu.cn/*
-// @connect      cx.2333.pub
+// @connect      ti.fakev.cn
 // @connect      baidu.com
-// @connect      up.gochati.cn
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/2.0.0/jquery.js
 // @run-at       document-end
 // @grant        unsafeWindow
@@ -39,14 +37,14 @@ function getRandomInteger(min, max) {
 }
 
 const api_array = [
-  "http://cx.2333.pub/hashTopic?question=",
+  "http://ti.fakev.cn/hashTopic?question=",
 ];
 
 // 设置修改后，需要刷新或重新打开网课页面才会生效
 var setting = {
     api: getRandomInteger(0, api_array.length), // 答题接口编号，参考上方，默认随机
     // 5E3 == 5000，科学记数法，表示毫秒数
-    time: 3e3, // 默认响应速度为5秒，不建议小于3秒
+    time:4e3, // 默认响应速度为5秒，不建议小于3秒
     review: 0, // 复习模式，完整挂机视频(音频)时长，支持挂机任务点已完成的视频和音频，默认关闭
     queue: 1, // 队列模式，开启后任务点逐一完成，关闭则单页面所有任务点同时进行，默认开启
     submit: 1, //答案收录，开启后可在作业完成界面自动收录题目，默认开启
@@ -59,7 +57,7 @@ var setting = {
     docs: 1, // 文档阅读任务点，PPT类任务点自动完成阅读任务，默认开启
     // 本区域参数，上方为任务点功能，下方为独立功能
     jump: 1, // 自动切换任务点、章节、课程(需要配置course参数)，默认开启
-    read: "0", // 挂机课程阅读时间，单位是分钟，'65'代表挂机65分钟，请手动打开阅读页面，默认'0'分钟
+    read: "65", // 挂机课程阅读时间，单位是分钟，'65'代表挂机65分钟，请手动打开阅读页面，默认'65'分钟
     face: 0, // 解除面部识别(不支持二维码类面部采集)，此功能仅为临时解除，默认关闭
     total: 1, // 显示课程进度的统计数据，在学习进度页面的上方展示，默认开启
     copy: 0, // 自动复制答案到剪贴板，也可以通过手动点击按钮或答案进行复制，默认关闭
@@ -78,7 +76,7 @@ var setting = {
     scale: 0, // 富文本编辑器高度自动拉伸，用于文本类题目，答题框根据内容自动调整大小，默认关闭
 
     // 仅开启jump时，修改此处才会生效
-    course: 1, // 当前课程完成后自动切换课程，仅支持按照根目录课程顺序切换，默认开启
+    course: 0, // 当前课程完成后自动切换课程，仅支持按照根目录课程顺序切换，默认关闭
     lock: 1, // 跳过未开放(图标是锁)的章节，即闯关模式或定时发放的任务点，默认开启
 
 
@@ -349,6 +347,9 @@ var $ = _self.jQuery || top.jQuery,
   vjs = _self.videojs;
 
 
+//console.log("vjs",vjs)
+
+
 String.prototype.toCDB = function () {
   return this.replace(/\s/g, "")
     .replace(/[\uff01-\uff5e]/g, function (str) {
@@ -440,6 +441,7 @@ if (url == "/mycourse/studentstudy") {
   }, setting.time);
 } else if (url == "/ztnodedetailcontroller/visitnodedetail") {
   setting.read *= 60 / $(".course_section").length;
+    //console.log(setting.read)
   setting.read && _self.sendLogs && autoRead();
 } else if (url == "/mycourse/studentcourse") {
   var gv = location.search.match(/d=\d+&/g);
@@ -538,6 +540,7 @@ function jobSort($) {
 }
 
 function checkPlayer(tip) {
+    //console.log("videojs1", _self.videojs)
   _self.videojs = hookVideo;
   hookVideo.xhr = vjs.xhr;
   Ext.isSogou = Ext.isIos = Ext.isAndroid = false;
@@ -554,6 +557,10 @@ function checkPlayer(tip) {
 
 function hookVideo() {
   _self.alert = console.log;
+            //console.log("hookvideo",arguments[1])
+    if (arguments[1]==undefined){
+        return
+    }
   var config = arguments[1],
     line =
       Ext.Array.filter(
@@ -964,7 +971,7 @@ function checkToNext() {
     $tip.parent(":not(.ans-job-finished)").length || (setting.jump && toNext());
   }, setting.time);
 }
-
+//去下一课程
 function toNext() {
   var $cur = $("#cur" + $("#chapterIdid").val()),
     $tip = $("span.currents ~ span"),
@@ -1000,19 +1007,25 @@ function switchCourse() {
             .filter(function () {
               return $.isNumeric(this);
             })[0] + 1 || 0;
+
       setting.course = list[index] ? goCourse(list[index]) : 0;
     },
   });
 }
 
 function goCourse(url) {
+
   GM_xmlhttpRequest({
     method: "GET",
     url: url,
     onload: function (xhr) {
+     const d = new RegExp("/mycourse/studentstudy.*'").exec(xhr.responseText)
+     if (d ===null){
+         return
+     }
       $.globalEval(
         'location.href = "' +
-          $(".articlename a[href]", xhr.responseText).attr("href") +
+          d[0].slice(0,-1) +
           '";'
       );
     },
