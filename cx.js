@@ -102,7 +102,7 @@ String.prototype.toCDB = function() {
 };
 
 setting.TiMu = [
-    filterImg('.Cy_TItle .clearfix').replace(/\s*（\d+\.\d+分）$/, ''),
+    filterImg('.Cy_TItle .clearfix').replace(/\s*（\d+\.\d+分）$/, '').replace("题型说明：请输入题型说明",'').replace(/\s*/g,""),
     $('[name^=type]:not([id])').val() || '-1',
     $('.cur a').text().trim() || '无',
     $('li .clearfix').map(function() {
@@ -209,7 +209,7 @@ function findTiMu() {
                 var obj = $.parseJSON(xhr.responseText) || {};
                 if (obj.code) {
                     var data = String(obj.data).replace(/&/g, '&amp;').replace(/<(?!img)/g, '&lt;'),
-                    que = setting.TiMu[0].match('<img') ? setting.TiMu[0] : setting.TiMu[0].replace(/&/g, '&amp;').replace(/</g, '&lt');
+                    que = setting.TiMu[0].match('<img') ? setting.TiMu[0] : setting.TiMu[0].replace(/&/g, '&amp;').replace(/</g, '&lt').replace("题型说明：请输入题型说明",'').replace(/\s*/g,"");
                     obj.data = /^http/.test(data) ? '<img src="' + obj.data + '">' : obj.data;
                     setting.div.find('tbody').append(
                         '<tr>' +
