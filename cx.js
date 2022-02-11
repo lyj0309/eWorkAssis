@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.2.7
+// @version      3.2.8
 // @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
