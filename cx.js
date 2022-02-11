@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.2.6
+// @version      3.2.7
 // @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
+// @match        *://*.edu.cn/*
 // @connect      ti.fakev.cn
 // @connect      baidu.com
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/2.0.0/jquery.js
@@ -117,7 +118,6 @@ setting.div = $(
         '<button style="margin-right: 10px;">暂停答题</button>' +
         '<button style="margin-right: 10px;' + (setting.jump ? '' : ' display: none;') + '">点击停止本次切换</button>' +
         '<button style="margin-right: 10px;">重新查询</button>' +
-        '<button style="margin-right: 10px; display: none;">复制答案</button>' +
         '<button>答题详情</button>' +
         '<div style="max-height: 200px; overflow-y: auto;">' +
             '<table border="1" style="font-size: 12px;">' +
@@ -559,10 +559,10 @@ function hookVideo() {
   _self.alert = console.log;
             //console.log("hookvideo",arguments[1])
     if (arguments[1]==undefined){
-        return
+        return vjs.apply(this, arguments)
     }
-  var config = arguments[1],
-    line =
+  var config = arguments[1]
+    var line =
       Ext.Array.filter(
         Ext.Array.map(config.playlines, function (value, index) {
           return value.label == setting.line && index;
@@ -594,6 +594,7 @@ function hookVideo() {
     a + img + "</a>"
   ).dom.title = "下载视频";
   player.on("loadstart", function () {
+     vjs("video").off("ratechange")
     setting.tip && this.play().catch(Ext.emptyFn);
     this.playbackRate(
       setting.rate > 16 || setting.rate < 0.0625 ? 1 : setting.rate
@@ -705,6 +706,7 @@ setting.div = $(
     var len = $(this).prevAll('button').length;
     if (this.nodeName == 'TD') {
         $(this).prev().length && GM_setClipboard($(this).text());
+         alert("复制成功")
     } else if (!$(this).siblings().length) {
         $(this).parent().text('正在搜索答案...');
         setting.num++;
