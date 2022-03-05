@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.2.8
+// @version      3.2.9
 // @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
 // @match        *://*.edu.cn/*
 // @connect      ti.fakev.cn
 // @connect      baidu.com
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/2.0.0/jquery.js
+// @require      https://lib.baomitu.com/jquery/3.6.0/jquery.js
 // @run-at       document-end
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
@@ -22,30 +22,26 @@
 // @antifeature tracking
 // ==/UserScript==
 
-
 var _hmt = _hmt || [];
 
-(function() {
-var hm = document.createElement("script");
-hm.src = "https://hm.baidu.com/hm.js?c2daa8e62b938a0869a122a0d6da4e9a";
-var s = document.getElementsByTagName("script")[0];
-s.parentNode.insertBefore(hm, s);
+(function () {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?c2daa8e62b938a0869a122a0d6da4e9a";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
 })();
-
 
 function getRandomInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-const api_array = [
-  "http://ti.fakev.cn/hashTopic?question=",
-];
+const api_array = ["http://ti.fakev.cn/hashTopic?question="];
 
 // 设置修改后，需要刷新或重新打开网课页面才会生效
 var setting = {
     api: getRandomInteger(0, api_array.length), // 答题接口编号，参考上方，默认随机
     // 5E3 == 5000，科学记数法，表示毫秒数
-    time:4e3, // 默认响应速度为5秒，不建议小于3秒
+    time: 4e3, // 默认响应速度为5秒，不建议小于3秒
     review: 0, // 复习模式，完整挂机视频(音频)时长，支持挂机任务点已完成的视频和音频，默认关闭
     queue: 1, // 队列模式，开启后任务点逐一完成，关闭则单页面所有任务点同时进行，默认开启
     submit: 1, //答案收录，开启后可在作业完成界面自动收录题目，默认开启
@@ -80,7 +76,6 @@ var setting = {
     course: 0, // 当前课程完成后自动切换课程，仅支持按照根目录课程顺序切换，默认关闭
     lock: 1, // 跳过未开放(图标是锁)的章节，即闯关模式或定时发放的任务点，默认开启
 
-
     //验证配置区
     ischeck: 0, //是否检测完毕，可手动更改为1避免全部检测(如果改为1可能会不能使用)
   },
@@ -88,244 +83,320 @@ var setting = {
   url = location.pathname,
   top = _self;
 
-
 var currentURL = window.location.pathname; // 获取当前网页地址
-if (currentURL.slice(0,32) == "/exam/test/reVersionTestStartNew"){
+if (currentURL.slice(0, 32) == "/exam/test/reVersionTestStartNew") {
+  (_self = unsafeWindow), ($ = _self.jQuery), (UE = _self.UE);
 
-_self = unsafeWindow,
-$ = _self.jQuery,
-UE = _self.UE;
-
-String.prototype.toCDB = function() {
-    return this.replace(/\s/g, '').replace(/[\uff01-\uff5e]/g, function(str) {
+  String.prototype.toCDB = function () {
+    return this.replace(/\s/g, "")
+      .replace(/[\uff01-\uff5e]/g, function (str) {
         return String.fromCharCode(str.charCodeAt(0) - 65248);
-    }).replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/。/g, '.');
-};
+      })
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/。/g, ".");
+  };
 
-setting.TiMu = [
-    filterImg('.Cy_TItle .clearfix').replace(/\s*（\d+\.\d+分）$/, '').replace("题型说明：请输入题型说明",'').replace(/\s*/g,""),
-    $('[name^=type]:not([id])').val() || '-1',
-    $('.cur a').text().trim() || '无',
-    $('li .clearfix').map(function() {
-        return filterImg(this);
-    })
-];
+  setting.TiMu = [
+    filterImg(".Cy_TItle .clearfix")
+      .replace(/\s*（\d+\.\d+分）$/, "")
+      .replace("题型说明：请输入题型说明", "")
+      .replace(/\s*/g, ""),
+    $("[name^=type]:not([id])").val() || "-1",
+    $(".cur a").text().trim() || "无",
+    $("li .clearfix").map(function () {
+      return filterImg(this);
+    }),
+  ];
 
-setting.div = $(
+  setting.div = $(
     '<div style="border: 2px dashed rgb(0, 85, 68); width: 330px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(70, 196, 38, 0.6); overflow-x: auto;">' +
-        '<span style="font-size: medium;"></span>' +
-        '<div style="font-size: medium;">正在搜索答案...</div>' +
-        '<button style="margin-right: 10px;">暂停答题</button>' +
-        '<button style="margin-right: 10px;' + (setting.jump ? '' : ' display: none;') + '">点击停止本次切换</button>' +
-        '<button style="margin-right: 10px;">重新查询</button>' +
-        '<button>答题详情</button>' +
-        '<div style="max-height: 200px; overflow-y: auto;">' +
-            '<table border="1" style="font-size: 12px;">' +
-                '<thead>' +
-                    '<tr>' +
-                        '<th colspan="2">' + ($('#randomOptions').val() == 'false' ? '' : '<font color="red">本次考试的选项为乱序 脚本会选择正确的选项</font>') + '</th>' +
-                    '</tr>' +
-                    '<tr>' +
-                        '<th style="width: 60%; min-width: 130px;">题目（点击可复制）</th>' +
-                        '<th style="min-width: 130px;">答案（点击可复制）</th>' +
-                    '</tr>' +
-                '</thead>' +
-                '<tfoot style="' + (setting.jump ? ' display: none;' : '') + '">' +
-                    '<tr>' +
-                        '<th colspan="2">已关闭 本次自动切换</th>' +
-                    '</tr>' +
-                '</tfoot>' +
-                '<tbody>' +
-                    '<tr>' +
-                        '<td colspan="2" style="display: none;"></td>' +
-                    '</tr>' +
-                '</tbody>' +
-            '</table>' +
-        '</div>' +
-    '</div>'
-).appendTo('body').on('click', 'button, td', function() {
-    var num = setting.$btn.index(this);
-    if (num == -1) {
+      '<span style="font-size: medium;"></span>' +
+      '<div style="font-size: medium;">正在搜索答案...</div>' +
+      '<button style="margin-right: 10px;">暂停答题</button>' +
+      '<button style="margin-right: 10px;' +
+      (setting.jump ? "" : " display: none;") +
+      '">点击停止本次切换</button>' +
+      '<button style="margin-right: 10px;">重新查询</button>' +
+      "<button>答题详情</button>" +
+      '<div style="max-height: 200px; overflow-y: auto;">' +
+      '<table border="1" style="font-size: 12px;">' +
+      "<thead>" +
+      "<tr>" +
+      '<th colspan="2">' +
+      ($("#randomOptions").val() == "false"
+        ? ""
+        : '<font color="red">本次考试的选项为乱序 脚本会选择正确的选项</font>') +
+      "</th>" +
+      "</tr>" +
+      "<tr>" +
+      '<th style="width: 60%; min-width: 130px;">题目（点击可复制）</th>' +
+      '<th style="min-width: 130px;">答案（点击可复制）</th>' +
+      "</tr>" +
+      "</thead>" +
+      '<tfoot style="' +
+      (setting.jump ? " display: none;" : "") +
+      '">' +
+      "<tr>" +
+      '<th colspan="2">已关闭 本次自动切换</th>' +
+      "</tr>" +
+      "</tfoot>" +
+      "<tbody>" +
+      "<tr>" +
+      '<td colspan="2" style="display: none;"></td>' +
+      "</tr>" +
+      "</tbody>" +
+      "</table>" +
+      "</div>" +
+      "</div>"
+  )
+    .appendTo("body")
+    .on("click", "button, td", function () {
+      var num = setting.$btn.index(this);
+      if (num == -1) {
         GM_setClipboard($(this).text());
-    } else if (num === 0) {
+      } else if (num === 0) {
         if (setting.loop) {
-            clearInterval(setting.loop);
-            delete setting.loop;
-            num = ['已暂停搜索', '继续答题'];
+          clearInterval(setting.loop);
+          delete setting.loop;
+          num = ["已暂停搜索", "继续答题"];
         } else {
-            setting.loop = setInterval(findTiMu, 2E3);
-            num = ['正在搜索答案...', '暂停答题'];
+          setting.loop = setInterval(findTiMu, 2e3);
+          num = ["正在搜索答案...", "暂停答题"];
         }
-        setting.$div.html(function() {
-            return $(this).data('html') || num[0];
-        }).removeData('html');
+        setting.$div
+          .html(function () {
+            return $(this).data("html") || num[0];
+          })
+          .removeData("html");
         $(this).html(num[1]);
-    } else if (num == 1) {
+      } else if (num == 1) {
         setting.jump = 0;
-        setting.$div.html(function() {
-            return arguments[1].replace('即将切换下一题', '未开启自动切换');
+        setting.$div.html(function () {
+          return arguments[1].replace("即将切换下一题", "未开启自动切换");
         });
-        setting.div.find('tfoot').add(this).toggle();
-    } else if (num == 2) {
+        setting.div.find("tfoot").add(this).toggle();
+      } else if (num == 2) {
         location.reload();
-    } else if (num == 3) {
-        GM_setClipboard(setting.div.find('td:last').text());
-    } else if (num == 4) {
-        ($('.leftCard .saveYl')[0] || $()).click();
-    }
-}).detach(setting.hide ? '*' : 'html');
-setting.$btn = setting.div.children('button');
-setting.$div = setting.div.children('div:eq(0)');
+      } else if (num == 3) {
+        GM_setClipboard(setting.div.find("td:last").text());
+      } else if (num == 4) {
+        ($(".leftCard .saveYl")[0] || $()).click();
+      }
+    })
+    .detach(setting.hide ? "*" : "html");
+  setting.$btn = setting.div.children("button");
+  setting.$div = setting.div.children("div:eq(0)");
 
-$(document).keydown(function(event) {
+  $(document).keydown(function (event) {
     if (event.keyCode == 38) {
-        setting.div.detach();
+      setting.div.detach();
     } else if (event.keyCode == 40) {
-        setting.div.appendTo('body');
+      setting.div.appendTo("body");
     }
-});
+  });
 
-if (setting.scale) _self.UEDITOR_CONFIG.scaleEnabled = false;
-$.each(UE.instants, function() {
+  if (setting.scale) _self.UEDITOR_CONFIG.scaleEnabled = false;
+  $.each(UE.instants, function () {
     var key = this.key;
-    this.ready(function() {
-        this.destroy();
-        UE.getEditor(key);
+    this.ready(function () {
+      this.destroy();
+      UE.getEditor(key);
     });
-});
-setting.loop = setInterval(findTiMu, 2E3);
+  });
+  setting.loop = setInterval(findTiMu, 2e3);
 
-function findTiMu() {
+  function findTiMu() {
     GM_xmlhttpRequest({
-        method: 'GET',
-        url:api_array[setting.api] + encodeURIComponent(setting.TiMu[0]) + '&type=' + setting.TiMu[1],
-        headers: {
-            'Authorization': setting.token,
-        },
-        timeout: setting.time,
-        onload: function(xhr) {
-            if (!setting.loop) {
-            } else if (xhr.status == 200) {
-                var obj = $.parseJSON(xhr.responseText) || {};
-                if (obj.code) {
-                    var data = String(obj.data).replace(/&/g, '&amp;').replace(/<(?!img)/g, '&lt;'),
-                    que = setting.TiMu[0].match('<img') ? setting.TiMu[0] : setting.TiMu[0].replace(/&/g, '&amp;').replace(/</g, '&lt').replace("题型说明：请输入题型说明",'').replace(/\s*/g,"");
-                    obj.data = /^http/.test(data) ? '<img src="' + obj.data + '">' : obj.data;
-                    setting.div.find('tbody').append(
-                        '<tr>' +
-                            '<td title="点击可复制">' + que + '</td>' +
-                            '<td title="点击可复制">' + (/^http/.test(data) ? obj.data : '') + data + '</td>' +
-                        '</tr>'
-                    );
-                    setting.copy && GM_setClipboard(obj.data);
-                    setting.$btn.eq(3).show();
-                    fillAnswer(obj);
-                } else {
-                    setting.$div.html(obj.data || '服务器繁忙，正在重试...');
-                }
-                setting.div.children('span').html(obj.msg || '');
-            } else if (xhr.status == 403) {
-                var html = xhr.responseText.indexOf('{') ? '请求过于频繁，建议稍后再试' : $.parseJSON(xhr.responseText).data;
-                setting.$div.data('html', html).siblings('button:eq(0)').click();
-            } else {
-                setting.$div.text('服务器异常，正在重试...');
-            }
-        },
-        ontimeout: function() {
-            setting.loop && setting.$div.text('服务器超时，正在重试...');
-        }
-    });
-}
-
-function fillAnswer(obj, tip) {
-    var $input = $(':radio, :checkbox', '.Cy_ulBottom'),
-    str = String(obj.data).toCDB() || new Date().toString(),
-    data = str.split(/#|\x01|\|/),
-    opt = obj.opt || str,
-    btn = $('.saveYl:contains(下一题)').offset();
-    // $input.filter(':radio:checked').prop('checked', false);
-    obj.code > 0 && $input.each(function(index) {
-        if (this.value == 'true') {
-            data.join().match(/(^|,)(正确|是|对|√|T|ri)(,|$)/) && this.click();
-        } else if (this.value == 'false') {
-            data.join().match(/(^|,)(错误|否|错|×|F|wr)(,|$)/) && this.click();
+      method: "GET",
+      url:
+        api_array[setting.api] +
+        encodeURIComponent(setting.TiMu[0]) +
+        "&type=" +
+        setting.TiMu[1],
+      headers: {
+        Authorization: setting.token,
+      },
+      timeout: setting.time,
+      onload: function (xhr) {
+        if (!setting.loop) {
+        } else if (xhr.status == 200) {
+          var obj = $.parseJSON(xhr.responseText) || {};
+          if (obj.code) {
+            var data = String(obj.data)
+                .replace(/&/g, "&amp;")
+                .replace(/<(?!img)/g, "&lt;"),
+              que = setting.TiMu[0].match("<img")
+                ? setting.TiMu[0]
+                : setting.TiMu[0]
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt")
+                    .replace("题型说明：请输入题型说明", "")
+                    .replace(/\s*/g, "");
+            obj.data = /^http/.test(data)
+              ? '<img src="' + obj.data + '">'
+              : obj.data;
+            setting.div
+              .find("tbody")
+              .append(
+                "<tr>" +
+                  '<td title="点击可复制">' +
+                  que +
+                  "</td>" +
+                  '<td title="点击可复制">' +
+                  (/^http/.test(data) ? obj.data : "") +
+                  data +
+                  "</td>" +
+                  "</tr>"
+              );
+            setting.copy && GM_setClipboard(obj.data);
+            setting.$btn.eq(3).show();
+            fillAnswer(obj);
+          } else {
+            setting.$div.html(obj.data || "服务器繁忙，正在重试...");
+          }
+          setting.div.children("span").html(obj.msg || "");
+        } else if (xhr.status == 403) {
+          var html = xhr.responseText.indexOf("{")
+            ? "请求过于频繁，建议稍后再试"
+            : $.parseJSON(xhr.responseText).data;
+          setting.$div.data("html", html).siblings("button:eq(0)").click();
         } else {
-            index = setting.TiMu[3][index].toCDB() || new Date().toString();
-            index = $.inArray(index, data) + 1 || (setting.TiMu[1] == '1' && str.indexOf(index) + 1);
-            Boolean(index) == this.checked || this.click();
+          setting.$div.text("服务器异常，正在重试...");
         }
-    }).each(function() {
-        if (!/^A?B?C?D?E?F?G?$/.test(opt)) return false;
-        Boolean(opt.match(this.value)) == this.checked || this.click();
+      },
+      ontimeout: function () {
+        setting.loop && setting.$div.text("服务器超时，正在重试...");
+      },
     });
+  }
+
+  function fillAnswer(obj, tip) {
+    var $input = $(":radio, :checkbox", ".Cy_ulBottom"),
+      str = String(obj.data).toCDB() || new Date().toString(),
+      data = str.split(/#|\x01|\|/),
+      opt = obj.opt || str,
+      btn = $(".saveYl:contains(下一题)").offset();
+    // $input.filter(':radio:checked').prop('checked', false);
+    obj.code > 0 &&
+      $input
+        .each(function (index) {
+          if (this.value == "true") {
+            data.join().match(/(^|,)(正确|是|对|√|T|ri)(,|$)/) && this.click();
+          } else if (this.value == "false") {
+            data.join().match(/(^|,)(错误|否|错|×|F|wr)(,|$)/) && this.click();
+          } else {
+            index = setting.TiMu[3][index].toCDB() || new Date().toString();
+            index =
+              $.inArray(index, data) + 1 ||
+              (setting.TiMu[1] == "1" && str.indexOf(index) + 1);
+            Boolean(index) == this.checked || this.click();
+          }
+        })
+        .each(function () {
+          if (!/^A?B?C?D?E?F?G?$/.test(opt)) return false;
+          Boolean(opt.match(this.value)) == this.checked || this.click();
+        });
     if (setting.TiMu[1].match(/^[013]$/)) {
-        tip = $input.is(':checked') || setting.none && (($input[Math.floor(Math.random() * $input.length)] || $()).click(), ' ');
+      tip =
+        $input.is(":checked") ||
+        (setting.none &&
+          (($input[Math.floor(Math.random() * $input.length)] || $()).click(),
+          " "));
     } else if (setting.TiMu[1].match(/^(2|[4-9]|1[08])$/)) {
-        data = String(obj.data).split(/#|\x01|\|/);
-        tip = $('.Cy_ulTk textarea').each(function(index) {
-            index = (obj.code > 0 && data[index]) || '';
-            UE.getEditor(this.name).setContent(index.trim());
-        }).length;
-        tip = (obj.code > 0 && data.length == tip) || setting.none && ' ';
-        setting.len = str.length * setting.time / 10;
+      data = String(obj.data).split(/#|\x01|\|/);
+      tip = $(".Cy_ulTk textarea").each(function (index) {
+        index = (obj.code > 0 && data[index]) || "";
+        UE.getEditor(this.name).setContent(index.trim());
+      }).length;
+      tip = (obj.code > 0 && data.length == tip) || (setting.none && " ");
+      setting.len = (str.length * setting.time) / 10;
     }
-    if (tip == ' ') {
-        tip = '已执行默认操作';
+    if (tip == " ") {
+      tip = "已执行默认操作";
     } else if (tip) {
-        tip = '自动答题已完成';
+      tip = "自动答题已完成";
     } else if (tip === undefined) {
-        tip = '该题型不支持自动答题';
+      tip = "该题型不支持自动答题";
     } else {
-        tip = '未找到有效答案';
+      tip = "未找到有效答案";
     }
     if (btn) {
-        tip += setting.jump ? '，即将切换下一题' : '，未开启自动切换';
-        setInterval(function() {
-            if (!setting.jump) return;
-            var mouse = document.createEvent('MouseEvents'),
-            arr = [btn.left + Math.ceil(Math.random() * 80), btn.top + Math.ceil(Math.random() * 26)];
-            mouse.initMouseEvent('click', true, true, document.defaultView, 0, 0, 0, arr[0], arr[1], false, false, false, false, 0, null);
-            _self.event = $.extend(true, {}, mouse);
-            delete _self.event.isTrusted;
-            _self.getTheNextQuestion(1);
-        }, setting.len || Math.ceil(setting.time * Math.random()) * 2);
+      tip += setting.jump ? "，即将切换下一题" : "，未开启自动切换";
+      setInterval(function () {
+        if (!setting.jump) return;
+        var mouse = document.createEvent("MouseEvents"),
+          arr = [
+            btn.left + Math.ceil(Math.random() * 80),
+            btn.top + Math.ceil(Math.random() * 26),
+          ];
+        mouse.initMouseEvent(
+          "click",
+          true,
+          true,
+          document.defaultView,
+          0,
+          0,
+          0,
+          arr[0],
+          arr[1],
+          false,
+          false,
+          false,
+          false,
+          0,
+          null
+        );
+        _self.event = $.extend(true, {}, mouse);
+        delete _self.event.isTrusted;
+        _self.getTheNextQuestion(1);
+      }, setting.len || Math.ceil(setting.time * Math.random()) * 2);
     } else {
-        setting.$btn.eq(1).hide();
-        tip = '答题已完成，请自行查看答题详情';
+      setting.$btn.eq(1).hide();
+      tip = "答题已完成，请自行查看答题详情";
     }
-    setting.$div.data('html', tip).siblings('button:eq(0)').hide().click();
-}
+    setting.$div.data("html", tip).siblings("button:eq(0)").hide().click();
+  }
 
-function filterImg(dom) {
-    return $(dom).clone().find('img[src]').replaceWith(function() {
-        return $('<p></p>').text('<img src="' + $(this).attr('src') + '">');
-    }).end().find('iframe[src]').replaceWith(function() {
-        return $('<p></p>').text('<iframe src="' + $(this).attr('src') + '"></irame>');
-    }).end().text().trim();
+  function filterImg(dom) {
+    return $(dom)
+      .clone()
+      .find("img[src]")
+      .replaceWith(function () {
+        return $("<p></p>").text('<img src="' + $(this).attr("src") + '">');
+      })
+      .end()
+      .find("iframe[src]")
+      .replaceWith(function () {
+        return $("<p></p>").text(
+          '<iframe src="' + $(this).attr("src") + '"></irame>'
+        );
+      })
+      .end()
+      .text()
+      .trim();
+  }
+  return;
 }
-    return
-}
-
 
 if (url != "/studyApp/studying" && top != _self.top)
   document.domain = location.host.replace(/.+?\./, "");
-try{
- backToOld()
-}catch{
-}
-let tmpSubmit = 1;//本次
+try {
+  backToOld();
+} catch {}
+let tmpSubmit = 1; //本次
 Object.defineProperty(setting, "auto", {
-get: function () {
-    console.log(GM_getValue("autosubmit"))
+  get: function () {
+    console.log(GM_getValue("autosubmit"));
     if (tmpSubmit >= 2) {
-        return tmpSubmit === 3;
+      return tmpSubmit === 3;
     }
     return GM_getValue("autosubmit");
-}, set: function (value) {
+  },
+  set: function (value) {
     tmpSubmit = value + 2;
-}
+  },
 });
-
 
 try {
   while (top != _self.top) {
@@ -337,18 +408,13 @@ try {
   top = _self;
 }
 
-
-
-
 var $ = _self.jQuery || top.jQuery,
   parent = _self == top ? self : _self.parent,
   Ext = _self.Ext || parent.Ext || {},
   UE = _self.UE,
   vjs = _self.videojs;
 
-
 //console.log("vjs",vjs)
-
 
 String.prototype.toCDB = function () {
   return this.replace(/\s/g, "")
@@ -398,8 +464,10 @@ if (url == "/mycourse/studentstudy") {
   url == "/work/addStudentWorkNewWeb"
 ) {
   if (!UE) {
-    var len = ($ || Ext.query || Array)("font:contains(未登录)", document)
-      .length;
+    var len = ($ || Ext.query || Array)(
+      "font:contains(未登录)",
+      document
+    ).length;
     setTimeout(
       len == 1 ? top.location.reload : parent.greenligth,
       setting.time
@@ -410,8 +478,45 @@ if (url == "/mycourse/studentstudy") {
   }
 } else if (url == "/ananas/modules/audio/index.html" && setting.audio) {
   if (setting.review) _self.greenligth = Ext.emptyFn;
-  _self.videojs = hookAudio;
   hookAudio.xhr = vjs.xhr;
+  let saveconfig = null;
+  _self.alert = console.log;
+  _self.videojs.hook("beforesetup", function (videoEl, options) {
+    var config = options;
+    config.plugins.studyControl.enableSwitchWindow = 1;
+    config.plugins.seekBarControl.enableFastForward = 1;
+    if (!setting.queue) delete config.plugins.studyControl;
+    saveconfig = config;
+    return config;
+  });
+  _self.videojs.hook("setup", function (player) {
+    var a =
+        '<a href="https://d0.ananas.chaoxing.com/download/' +
+        _self.config("objectid") +
+        '" target="_blank">',
+      img = '<img src="" style="margin: 6px 0 0 6px;">';
+    player.volume(Math.round(setting.vol) / 100 || 0);
+    player.playbackRate(
+      setting.rate > 16 || setting.rate < 0.0625 ? 1 : setting.rate
+    );
+    Ext.get(player.controlBar.addChild("Button").el_).setHTML(
+      a + img + "</a>"
+    ).dom.title = "下载音频";
+    player.on("loadeddata", function () {
+      setting.tip && this.play().catch(Ext.emptyFn);
+    });
+    player.one("firstplay", function () {
+      setting.rate === "0" &&
+        saveconfig.plugins.seekBarControl.sendLog(
+          this.children_[0],
+          "ended",
+          Math.floor(this.cache_.duration)
+        );
+    });
+    player.on("ended", function () {
+      Ext.fly(frameElement).parent().addCls("ans-job-finished");
+    });
+  });
 } else if (
   url == "/ananas/modules/innerbook/index.html" &&
   setting.book &&
@@ -441,7 +546,7 @@ if (url == "/mycourse/studentstudy") {
   }, setting.time);
 } else if (url == "/ztnodedetailcontroller/visitnodedetail") {
   setting.read *= 60 / $(".course_section").length;
-    //console.log(setting.read)
+  //console.log(setting.read)
   setting.read && _self.sendLogs && autoRead();
 } else if (url == "/mycourse/studentcourse") {
   var gv = location.search.match(/d=\d+&/g);
@@ -471,11 +576,10 @@ if (url == "/mycourse/studentstudy") {
 } else if (url.match(/^\/visit\/(courses|interaction)$/)) {
   setting.face &&
     $(".zmodel").on("click", "[onclick^=openFaceTip]", DisplayURL);
-}  else if (location.hostname == "i.mooc.chaoxing.com") {
-    if(setting.ischeck==0){
-        opencheckGUI();
-    }
-
+} else if (location.hostname == "i.mooc.chaoxing.com") {
+  if (setting.ischeck == 0) {
+    opencheckGUI();
+  }
 } else if (url == "/widget/pcvote/goStudentVotePage") {
   $(":checked").click();
   $(".StudentTimu").each(function (index) {
@@ -488,12 +592,14 @@ if (url == "/mycourse/studentstudy") {
     });
   });
 } else if (url == "/work/selectWorkQuestionYiPiYue") {
-    if(setting.submit==1){
-        dynamicLoadCss("https://cdn.bootcdn.net/ajax/libs/milligram/1.4.1/milligram.min.css");
-    }
+  if (setting.submit == 1) {
+    dynamicLoadCss(
+      "https://cdn.bootcdn.net/ajax/libs/milligram/1.4.1/milligram.min.css"
+    );
+  }
 }
-function opencheckGUI(){
-             _self.layui.use("layer", function () {
+function opencheckGUI() {
+  _self.layui.use("layer", function () {
     this.layer.open({
       content: "拖动进度条、倍速播放、秒过会导致不良记录！",
       title: "fake题提醒",
@@ -504,12 +610,12 @@ function opencheckGUI(){
   });
 }
 function dynamicLoadCss(url) {
-		var head = document.getElementsByTagName('head')[0];
-		var link = document.createElement('link');
-		link.type='text/css';
-		link.rel = 'stylesheet';
-		link.href = url;
-		head.appendChild(link);
+  var head = document.getElementsByTagName("head")[0];
+  var link = document.createElement("link");
+  link.type = "text/css";
+  link.rel = "stylesheet";
+  link.href = url;
+  head.appendChild(link);
 }
 function getIframe(tip, win, job) {
   if (!$)
@@ -540,9 +646,71 @@ function jobSort($) {
 }
 
 function checkPlayer(tip) {
-    //console.log("videojs1", _self.videojs)
-  _self.videojs = hookVideo;
-  hookVideo.xhr = vjs.xhr;
+  let saveconfig = null;
+  _self.videojs.hook("beforesetup", function (videoEl, options) {
+    var config = options;
+    if (!config) {
+      return options;
+    }
+    var line =
+        Ext.Array.filter(
+          Ext.Array.map(config.playlines, function (value, index) {
+            return value.label == setting.line && index;
+          }),
+          function (value) {
+            return Ext.isNumber(value);
+          }
+        )[0] || 0,
+      http = Ext.Array.filter(config.sources, function (value) {
+        return value.label == setting.http;
+      })[0];
+    config.playlines.unshift(config.playlines[line]);
+    config.playlines.splice(line + 1, 1);
+    config.plugins.videoJsResolutionSwitcher.default = http ? http.res : 360;
+    config.plugins.studyControl.enableSwitchWindow = 1;
+    config.plugins.timelineObjects.url = "/richvideo/initdatawithviewer?";
+    config.plugins.seekBarControl.enableFastForward = 1;
+    config.playbackRates = [0.5, 1, 1.5, 2, 4, 8, 16];
+    if (!setting.queue) delete config.plugins.studyControl;
+    saveconfig = config;
+    return config;
+  });
+  _self.videojs.hook("setup", function (player) {
+    var a =
+        '<a href="https://d0.ananas.chaoxing.com/download/' +
+        _self.config("objectid") +
+        '" target="_blank">',
+      img = '<img src="" style="margin: 6px 0 0 6px;">';
+    player.playbackRate = function (t) {
+      if (void 0 === t) return;
+      this.tech_ && this.tech_.featuresPlaybackRate
+        ? this.cache_.lastPlaybackRate || this.techGet_("playbackRate")
+        : setting.rate;
+      this.techCall_("setPlaybackRate", t);
+    };
+    player.volume(Math.round(setting.vol) / 100 || 0);
+    Ext.get(player.controlBar.addChild("Button").el_).setHTML(
+      a + img + "</a>"
+    ).dom.title = "下载视频";
+    player.on("loadstart", function () {
+      setting.tip && this.play().catch(Ext.emptyFn);
+      this.playbackRate(
+        setting.rate > 16 || setting.rate < 0.0625 ? 1 : setting.rate
+      );
+    });
+    player.one(["loadedmetadata", "firstplay"], function () {
+      setting.two = setting.rate === "0" && setting.two < 1;
+      setting.two &&
+        saveconfig.plugins.seekBarControl.sendLog(
+          this.children_[0],
+          "ended",
+          Math.floor(this.cache_.duration)
+        );
+    });
+    player.on("ended", function () {
+      Ext.fly(frameElement).parent().addCls("ans-job-finished");
+    });
+  });
   Ext.isSogou = Ext.isIos = Ext.isAndroid = false;
   var data = Ext.decode(_self.config("data")) || {};
   delete data.danmaku;
@@ -557,12 +725,12 @@ function checkPlayer(tip) {
 
 function hookVideo() {
   _self.alert = console.log;
-            //console.log("hookvideo",arguments[1])
-    if (arguments[1]==undefined){
-        return vjs.apply(this, arguments)
-    }
-  var config = arguments[1]
-    var line =
+  //console.log(arguments);
+  var config = arguments[1];
+  if (!config) {
+    return vjs.apply(this, arguments);
+  }
+  var line =
       Ext.Array.filter(
         Ext.Array.map(config.playlines, function (value, index) {
           return value.label == setting.line && index;
@@ -574,6 +742,7 @@ function hookVideo() {
     http = Ext.Array.filter(config.sources, function (value) {
       return value.label == setting.http;
     })[0];
+  config.playbackRates = [0.5, 1, 1.5, 2, 4, 6, 8, 16];
   config.playlines.unshift(config.playlines[line]);
   config.playlines.splice(line + 1, 1);
   config.plugins.videoJsResolutionSwitcher.default = http ? http.res : 360;
@@ -581,27 +750,34 @@ function hookVideo() {
   config.plugins.timelineObjects.url = "/richvideo/initdatawithviewer?";
   config.plugins.seekBarControl.enableFastForward = 1;
   if (!setting.queue) delete config.plugins.studyControl;
-  // config.preload = setting.tip ? 'auto' : 'none';
+
   var player = vjs.apply(this, arguments),
     a =
-      '<a href="https://d0.ananas.chaoxing.com/download/' +
+      '<a href="https://s1.ananas.chaoxing.com/download/' +
       _self.config("objectid") +
       '" target="_blank">',
     img =
       '<img src="https://d0.ananas.chaoxing.com/download/e363b256c0e9bc5bd8266bf99dd6d6bb" style="margin: 6px 0 0 6px;">';
+  player.playbackRate = function (t) {
+    if (void 0 === t)
+      return (
+        "•" + this.cache_.lastPlaybackRate || this.techGet_("playbackRate")
+      );
+    this.tech_ && this.tech_.featuresPlaybackRate
+      ? this.cache_.lastPlaybackRate || this.techGet_("playbackRate")
+      : setting.rate;
+    this.techCall_("setPlaybackRate", t);
+  };
   player.volume(Math.round(setting.vol) / 100 || 0);
-  Ext.get(player.controlBar.addChild("Button").el_).setHTML(
-    a + img + "</a>"
-  ).dom.title = "下载视频";
   player.on("loadstart", function () {
-     vjs("video").off("ratechange")
     setting.tip && this.play().catch(Ext.emptyFn);
     this.playbackRate(
       setting.rate > 16 || setting.rate < 0.0625 ? 1 : setting.rate
     );
   });
   player.one(["loadedmetadata", "firstplay"], function () {
-    setting.two = setting.rate === "0" && setting.two < 1;
+    setting.two =
+      (setting.rate === "0" || GM_getValue("fast") == 1) && setting.two < 1;
     setting.two &&
       config.plugins.seekBarControl.sendLog(
         this.children_[0],
@@ -612,44 +788,11 @@ function hookVideo() {
   player.on("ended", function () {
     Ext.fly(frameElement).parent().addCls("ans-job-finished");
   });
+
   return player;
 }
-
 function hookAudio() {
-  _self.alert = console.log;
-  var config = arguments[1];
-  config.plugins.studyControl.enableSwitchWindow = 1;
-  config.plugins.seekBarControl.enableFastForward = 1;
-  if (!setting.queue) delete config.plugins.studyControl;
-  var player = vjs.apply(this, arguments),
-    a =
-      '<a href="https://d0.ananas.chaoxing.com/download/' +
-      _self.config("objectid") +
-      '" target="_blank">',
-    img =
-      '<img src="https://d0.ananas.chaoxing.com/download/e363b256c0e9bc5bd8266bf99dd6d6bb" style="margin: 6px 0 0 6px;">';
-  player.volume(Math.round(setting.vol) / 100 || 0);
-  player.playbackRate(
-    setting.rate > 16 || setting.rate < 0.0625 ? 1 : setting.rate
-  );
-  Ext.get(player.controlBar.addChild("Button").el_).setHTML(
-    a + img + "</a>"
-  ).dom.title = "下载音频";
-  player.on("loadeddata", function () {
-    setting.tip && this.play().catch(Ext.emptyFn);
-  });
-  player.one("firstplay", function () {
-    setting.rate === "0" &&
-      config.plugins.seekBarControl.sendLog(
-        this.children_[0],
-        "ended",
-        Math.floor(this.cache_.duration)
-      );
-  });
-  player.on("ended", function () {
-    Ext.fly(frameElement).parent().addCls("ans-job-finished");
-  });
-  return player;
+
 }
 
 function relieveLimit() {
@@ -664,78 +807,93 @@ function relieveLimit() {
 }
 
 function beforeFind() {
-var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>'
-var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>'
-setting.regl = parent.greenligth || $.noop;
-if ($.type(parent._data) == 'array') return setting.regl();
-setting.div = $(
-    '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
-    '<script>function openImg(src) {layui.use(\'layer\', function () {this.layer.open({type: 1,title: \'查看大图\', skin: \'layui-layer-rim\', area: [\'900x\', \'700px\'], content: \'<img  style="max-width: 800px" src="\'+src+\'" >\'});});}</script>'+
-    '<style>.top::-webkit-scrollbar {display: none;}</style>'+
-    '<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">'+
-    '<div style="border: 2px solid #F9CDAD;padding: 5px;border-radius: 5px; width: 380px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(249, 205, 173, 0.35); overflow-x: auto;backdrop-filter: blur(5px);">' +
-    '<span style="font-size: medium;"></span>' + a +
-    '<div class="btn-group"><button class="btn btn-light btn-sm" style="opacity: 0.9">暂停答题</button>' +
-    '<button class="btn btn-light btn-sm" style="opacity: 0.9">' + (setting.auto ? '取消本次自动提交' : '开启本次自动提交') + '</button>' +
-    '<button class="btn btn-light btn-sm" style="opacity: 0.9">重新查询</button>' +
-    '<button class="btn btn-light btn-sm" style="opacity: 0.9">折叠面板</button></div><br />' +
-    '<input id="autosubmit" type="checkbox"' + (setting.auto ? ' checked' : '') + '>自动提交</input>' +
-    '<div class="top" style="max-height: 440px; overflow-y: auto;">' +
-    '<table border="1" style="font-size: 12px;">' +
-    '<thead>' +
-    '<tr>' +
-    '<th style="width: 25px; min-width: 25px;">题号</th>' +
-    '<th style="width: 60%; min-width: 130px;">题目(点击可复制,可滚动)</th>' +
-    '<th style="min-width: 130px;">答案（同👈）</th>' +
-    '</tr>' +
-    '</thead>' +
-    '<tfoot style="display: none;">' +
-    '<tr>' +
-    '<th colspan="3">答案提示框 已折叠</th>' +
-    '</tr>' +
-    '</tfoot>' +
-    '<tbody>' +
-    '<tr>' +
-    '<td colspan="3" style="display: none;"></td>' +
-    '</tr>' +
-    '</tbody>' +
-    '</table>' +
-    '</div>' +
-    '</div>'
-).appendTo('body').on('click', 'button, td, input', function() {
-    var len = $(this).prevAll('button').length;
-    if (this.nodeName == 'TD') {
+  var a =
+    '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>';
+  var b =
+    '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>';
+  setting.regl = parent.greenligth || $.noop;
+  if ($.type(parent._data) == "array") return setting.regl();
+  setting.div = $(
+    '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>' +
+      "<script>function openImg(src) {layui.use('layer', function () {this.layer.open({type: 1,title: '查看大图', skin: 'layui-layer-rim', area: ['900x', '700px'], content: '<img  style=\"max-width: 800px\" src=\"'+src+'\" >'});});}</script>" +
+      "<style>.top::-webkit-scrollbar {display: none;}</style>" +
+      '<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">' +
+      '<div style="border: 2px solid #F9CDAD;padding: 5px;border-radius: 5px; width: 380px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(249, 205, 173, 0.35); overflow-x: auto;backdrop-filter: blur(5px);">' +
+      '<span style="font-size: medium;"></span>' +
+      a +
+      '<div class="btn-group"><button class="btn btn-light btn-sm" style="opacity: 0.9">暂停答题</button>' +
+      '<button class="btn btn-light btn-sm" style="opacity: 0.9">' +
+      (setting.auto ? "取消本次自动提交" : "开启本次自动提交") +
+      "</button>" +
+      '<button class="btn btn-light btn-sm" style="opacity: 0.9">重新查询</button>' +
+      '<button class="btn btn-light btn-sm" style="opacity: 0.9">折叠面板</button></div><br />' +
+      '<input id="autosubmit" type="checkbox"' +
+      (setting.auto ? " checked" : "") +
+      ">自动提交</input>" +
+      '<div class="top" style="max-height: 440px; overflow-y: auto;">' +
+      '<table border="1" style="font-size: 12px;">' +
+      "<thead>" +
+      "<tr>" +
+      '<th style="width: 25px; min-width: 25px;">题号</th>' +
+      '<th style="width: 60%; min-width: 130px;">题目(点击可复制,可滚动)</th>' +
+      '<th style="min-width: 130px;">答案（同👈）</th>' +
+      "</tr>" +
+      "</thead>" +
+      '<tfoot style="display: none;">' +
+      "<tr>" +
+      '<th colspan="3">答案提示框 已折叠</th>' +
+      "</tr>" +
+      "</tfoot>" +
+      "<tbody>" +
+      "<tr>" +
+      '<td colspan="3" style="display: none;"></td>' +
+      "</tr>" +
+      "</tbody>" +
+      "</table>" +
+      "</div>" +
+      "</div>"
+  )
+    .appendTo("body")
+    .on("click", "button, td, input", function () {
+      var len = $(this).prevAll("button").length;
+      if (this.nodeName == "TD") {
         $(this).prev().length && GM_setClipboard($(this).text());
-         alert("复制成功")
-    } else if (!$(this).siblings().length) {
-        $(this).parent().text('正在搜索答案...');
+        alert("复制成功");
+      } else if (!$(this).siblings().length) {
+        $(this).parent().text("正在搜索答案...");
         setting.num++;
-    } else if (len == 0 && this.id != "autosubmit") {
+      } else if (len == 0 && this.id != "autosubmit") {
         if (setting.loop) {
-            clearInterval(setting.loop);
-            delete setting.loop;
-            len = ['已暂停搜索', '继续答题'];
+          clearInterval(setting.loop);
+          delete setting.loop;
+          len = ["已暂停搜索", "继续答题"];
         } else {
-            setting.loop = setInterval(findAnswer, setting.time);
-            len = ['正在搜索答案...', '暂停答题'];
+          setting.loop = setInterval(findAnswer, setting.time);
+          len = ["正在搜索答案...", "暂停答题"];
         }
-        setting.div.children('div:eq(0)').html(function () {
-            return $(this).data('html') || len[0];
-        }).removeData('html');
+        setting.div
+          .children("div:eq(0)")
+          .html(function () {
+            return $(this).data("html") || len[0];
+          })
+          .removeData("html");
         $(this).html(len[1]);
-    } else if (len == 1) {
+      } else if (len == 1) {
         setting.auto = !setting.auto;
-        $(this).html(setting.auto ? '取消本次自动提交' : '开启本次自动提交');
-    } else if (len == 2) {
+        $(this).html(setting.auto ? "取消本次自动提交" : "开启本次自动提交");
+      } else if (len == 2) {
         parent.location.reload();
-    } else if (len == 3) {
-        setting.div.find('tbody, tfoot').toggle();
-    } else if (this.id == "autosubmit") {
+      } else if (len == 3) {
+        setting.div.find("tbody, tfoot").toggle();
+      } else if (this.id == "autosubmit") {
         // 题目自动提交配置
         console.log(this.checked);
         GM_setValue("autosubmit", this.checked);
-    }
-}).find('table, td, th').css('border', '1px solid').end();
+      }
+    })
+    .find("table, td, th")
+    .css("border", "1px solid")
+    .end();
   setting.lose = setting.num = 0;
   setting.data = parent._data = [];
   setting.over = '<button style="margin-right: 10px;">跳过此题</button>';
@@ -1016,20 +1174,15 @@ function switchCourse() {
 }
 
 function goCourse(url) {
-
   GM_xmlhttpRequest({
     method: "GET",
     url: url,
     onload: function (xhr) {
-     const d = new RegExp("/mycourse/studentstudy.*'").exec(xhr.responseText)
-     if (d ===null){
-         return
-     }
-      $.globalEval(
-        'location.href = "' +
-          d[0].slice(0,-1) +
-          '";'
-      );
+      const d = new RegExp("/mycourse/studentstudy.*'").exec(xhr.responseText);
+      if (d === null) {
+        return;
+      }
+      $.globalEval('location.href = "' + d[0].slice(0, -1) + '";');
     },
   });
 }
@@ -1075,7 +1228,6 @@ function DisplayURL() {
     "html"
   );
 }
-
 
 function filterImg(dom) {
   return $(dom)
