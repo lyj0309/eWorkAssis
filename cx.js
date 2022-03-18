@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.3.0
+// @version      3.3.1
 // @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
@@ -64,7 +64,7 @@ var setting = {
     , rate: '1' // 视频播放默认倍率，参数范围0∪[0.0625,16]，'0'为秒过，默认'1'倍
 
     // 仅开启work时，修改此处才会生效
-    // auto: 1 已放置面板,请在面板配置,默认为自动提交 // 答题完成后自动提交，默认开启
+    , auto: 1 //已放置面板,请在面板配置,默认为自动提交 // 答题完成后自动提交，默认开启
     , none: 0 // 无匹配答案时执行默认操作，关闭后若题目无匹配答案则会暂时保存已作答的题目，默认开启
     , scale: 0 // 富文本编辑器高度自动拉伸，用于文本类题目，答题框根据内容自动调整大小，默认关闭
 
@@ -515,7 +515,7 @@ if (url == '/mycourse/studentstudy') {
     setting.username && getSchoolId();
 } else if (location.hostname == 'i.mooc.chaoxing.com' || location.hostname == 'i.chaoxing.com') {
     _self.layui.use('layer', function () {
-        this.layer.open({ content: '拖动进度条、倍速播放、秒过会导致不良记录！题库在慢慢补充，搜不到的题目系统会尽快进行自动补充，脚本发布官网：http://521daigua.cn', title: '超星网课助手提示', btn: '我已知悉', offset: 't', closeBtn: 0 });
+        this.layer.open({ content: '拖动进度条、倍速播放、秒过会导致不良记录！题库在慢慢补充，搜不到的题目系统会尽快进行自动补充，脚本发布官网：http://ti.fakev.cn', title: '超星网课助手提示', btn: '我已知悉', offset: 't', closeBtn: 0 });
     });
 } else if (url == '/widget/pcvote/goStudentVotePage') {
     $(':checked').click();
@@ -707,103 +707,95 @@ function relieveLimit() {
 }
 
 function beforeFind() {
-  var a =
-    '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>';
-  var b =
-    '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>';
-  setting.regl = parent.greenligth || $.noop;
-  if ($.type(parent._data) == "array") return setting.regl();
-
-    setting.div = $(
-    '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>' +
-      "<script>function openImg(src) {layui.use('layer', function () {this.layer.open({type: 1,title: '查看大图', skin: 'layui-layer-rim', area: ['900x', '700px'], content: '<img  style=\"max-width: 800px\" src=\"'+src+'\" >'});});}</script>" +
-      "<style>.top::-webkit-scrollbar {display: none;}</style>" +
-      '<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">' +
-      '<div style="border: 2px solid #F9CDAD;padding: 5px;border-radius: 5px; width: 380px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(249, 205, 173, 0.35); overflow-x: auto;backdrop-filter: blur(5px);">' +
-      '<span style="font-size: medium;"></span>' +
-      a +
-      '<div class="btn-group"><button class="btn btn-light btn-sm" style="opacity: 0.9">暂停答题</button>' +
-      '<button class="btn btn-light btn-sm" style="opacity: 0.9">' +
-      (setting.auto ? "取消本次自动提交" : "开启本次自动提交") +
-      "</button>" +
-      '<button class="btn btn-light btn-sm" style="opacity: 0.9">重新查询</button>' +
-      '<button class="btn btn-light btn-sm" style="opacity: 0.9">折叠面板</button></div><br />' +
-      '<input id="autosubmit" type="checkbox"' +
-      (setting.auto ? " checked" : "") +
-      ">自动提交</input>" +
-      '<div class="top" style="max-height: 440px; overflow-y: auto;">' +
-      '<table border="1" style="font-size: 12px;">' +
-      "<thead>" +
-      "<tr>" +
-      '<th style="width: 25px; min-width: 25px;">题号</th>' +
-      '<th style="width: 60%; min-width: 130px;">题目(点击可复制,可滚动)</th>' +
-      '<th style="min-width: 130px;">答案（同👈）</th>' +
-      "</tr>" +
-      "</thead>" +
-      '<tfoot style="display: none;">' +
-      "<tr>" +
-      '<th colspan="3">答案提示框 已折叠</th>' +
-      "</tr>" +
-      "</tfoot>" +
-      "<tbody>" +
-      "<tr>" +
-      '<td colspan="3" style="display: none;"></td>' +
-      "</tr>" +
-      "</tbody>" +
-      "</table>" +
-      "</div>" +
-      "</div>"
-    ).appendTo('body').on('click', 'button, td, input', function () {
-        var len = $(this).prevAll('button').length;
-        if (this.nodeName == 'TD') {
-            $(this).prev().length && GM_setClipboard($(this).text());
-        } else if (!$(this).siblings().length) {
-            $(this).parent().text('正在搜索答案...');
-            setting.num++;
-        } else if (len === 0) {
-            if (setting.loop) {
-                clearInterval(setting.loop);
-                delete setting.loop;
-                len = ['已暂停搜索', '继续答题'];
-            } else {
-                setting.loop = setInterval(findAnswer, setting.time);
-                len = ['正在搜索答案...', '暂停答题'];
-            }
-            setting.div.children('div:eq(0)').html(function () {
-                return $(this).data('html') || len[0];
-            }).removeData('html');
-            $(this).html(len[1]);
-        } else if (len == 1) {
-            setting.auto = !setting.auto;
-            $(this).html(setting.auto ? '取消本次自动提交' : '开启本次自动提交');
-        } else if (len == 2) {
-            parent.location.reload();
-        } else if (len == 3) {
-            setting.div.find('tbody, tfoot').toggle();
-        } else if (this.id == "autosubmit") {
-            // 题目自动提交配置
-            console.log(this.checked);
-            GM_setValue("autosubmit", this.checked);
+var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>'
+var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>'
+setting.regl = parent.greenligth || $.noop;
+if ($.type(parent._data) == 'array') return setting.regl();
+setting.div = $(
+    '<link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>'+
+    '<script>function openImg(src) {layui.use(\'layer\', function () {this.layer.open({type: 1,title: \'查看大图\', skin: \'layui-layer-rim\', area: [\'900x\', \'700px\'], content: \'<img  style="max-width: 800px" src="\'+src+\'" >\'});});}</script>'+
+    '<style>.top::-webkit-scrollbar {display: none;}</style>'+
+    '<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">'+
+    '<div style="border: 2px solid #F9CDAD;padding: 5px;border-radius: 5px; width: 380px; position: fixed; top: 0; right: 0; z-index: 99999; background-color: rgba(249, 205, 173, 0.35); overflow-x: auto;backdrop-filter: blur(5px);">' +
+    '<span style="font-size: medium;"></span>' + a +
+    '<div class="btn-group"><button class="btn btn-light btn-sm" style="opacity: 0.9">暂停答题</button>' +
+    '<button class="btn btn-light btn-sm" style="opacity: 0.9">' + (setting.auto ? '取消本次自动提交' : '开启本次自动提交') + '</button>' +
+    '<button class="btn btn-light btn-sm" style="opacity: 0.9">重新查询</button>' +
+    '<button class="btn btn-light btn-sm" style="opacity: 0.9">折叠面板</button></div><br />' +
+    '<input id="autosubmit" type="checkbox"' + (setting.auto ? ' checked' : '') + '>自动提交</input>' +
+    '<div class="top" style="max-height: 440px; overflow-y: auto;">' +
+    '<table border="1" style="font-size: 12px;">' +
+    '<thead>' +
+    '<tr>' +
+    '<th style="width: 25px; min-width: 25px;">题号</th>' +
+    '<th style="width: 60%; min-width: 130px;">题目(点击可复制,可滚动)</th>' +
+    '<th style="min-width: 130px;">答案（同👈）</th>' +
+    '</tr>' +
+    '</thead>' +
+    '<tfoot style="display: none;">' +
+    '<tr>' +
+    '<th colspan="3">答案提示框 已折叠</th>' +
+    '</tr>' +
+    '</tfoot>' +
+    '<tbody>' +
+    '<tr>' +
+    '<td colspan="3" style="display: none;"></td>' +
+    '</tr>' +
+    '</tbody>' +
+    '</table>' +
+    '</div>' +
+    '</div>'
+).appendTo('body').on('click', 'button, td, input', function() {
+    var len = $(this).prevAll('button').length;
+    if (this.nodeName == 'TD') {
+        $(this).prev().length && GM_setClipboard($(this).text());
+         alert("复制成功")
+    } else if (!$(this).siblings().length) {
+        $(this).parent().text('正在搜索答案...');
+        setting.num++;
+    } else if (len == 0 && this.id != "autosubmit") {
+        if (setting.loop) {
+            clearInterval(setting.loop);
+            delete setting.loop;
+            len = ['已暂停搜索', '继续答题'];
+        } else {
+            setting.loop = setInterval(findAnswer, setting.time);
+            len = ['正在搜索答案...', '暂停答题'];
         }
-    }).on('click', 'minimize', function () {
-        $(this).parent().parent().css("display", "none");
-        GM_setValue("minimize", "1");
-        $(maximize).css("display", "block");
-    }).find('table, td, th').css('border', '1px solid').end();
-
-    if (GM_getValue("minimize") == "1") {
-        $(setting.div).css("display", "none");
-        $(maximize).css("display", "block");
+        setting.div.children('div:eq(0)').html(function () {
+            return $(this).data('html') || len[0];
+        }).removeData('html');
+        $(this).html(len[1]);
+    } else if (len == 1) {
+        setting.auto = !setting.auto;
+        $(this).html(setting.auto ? '取消本次自动提交' : '开启本次自动提交');
+    } else if (len == 2) {
+        parent.location.reload();
+    } else if (len == 3) {
+        setting.div.find('tbody, tfoot').toggle();
+    } else if (this.id == "autosubmit") {
+        // 题目自动提交配置
+        console.log(this.checked);
+        GM_setValue("autosubmit", this.checked);
     }
-
-    setting.lose = setting.num = 0;
-    setting.data = parent._data = [];
-    setting.over = '<button style="margin-right: 10px;">跳过此题</button>';
-    setting.curs = $('script:contains(courseName)', top.document).text().match(/courseName:\'(.+?)\'|$/)[1] || $('h1').text().trim() || '无';
-    setting.loop = setInterval(findAnswer, setting.time);
-    var tip = ({ undefined: '任务点排队中', null: '等待切换中' })[setting.tip];
-    tip && setting.div.children('div:eq(0)').data('html', tip).siblings('button:eq(0)').click();
-
+}).find('table, td, th').css('border', '1px solid').end();
+  setting.lose = setting.num = 0;
+  setting.data = parent._data = [];
+  setting.over = '<button style="margin-right: 10px;">跳过此题</button>';
+  setting.curs =
+    $("script:contains(courseName)", top.document)
+      .text()
+      .match(/courseName:\'(.+?)\'|$/)[1] ||
+    $("h1").text().trim() ||
+    "无";
+  setting.loop = setInterval(findAnswer, setting.time);
+  var tip = { undefined: "任务点排队中", null: "等待切换中" }[setting.tip];
+  tip &&
+    setting.div
+      .children("div:eq(0)")
+      .data("html", tip)
+      .siblings("button:eq(0)")
+      .click();
 }
 
 function findAnswer() {
