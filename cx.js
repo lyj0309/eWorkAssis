@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.3.2
+// @version      3.4.0
 // @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
 // @match        *://*.edu.cn/*
 // @connect      ti.fakev.cn
+// @connect      127.0.0.1
 // @connect      baidu.com
 // @require      https://lib.baomitu.com/jquery/3.6.0/jquery.js
 // @run-at       document-end
@@ -81,7 +82,8 @@ var setting = {
     _self = unsafeWindow,
     url = location.pathname,
     top = _self,
-    api = "http://ti.fakev.cn/hashTopic?question=";
+    host = "http://ti.fakev.cn";
+    //api = "http://127.0.0.1:8079/hashTopic?question=";
 
 var tmpSubmit = 1;
 Object.defineProperty(setting, "auto", {
@@ -224,7 +226,7 @@ if (currentURL.slice(0, 32) == "/exam/test/reVersionTestStartNew") {
         GM_xmlhttpRequest({
             method: "GET",
             url:
-                api +
+                host + '/hashTopic?question='+
                 encodeURIComponent(setting.TiMu[0]) +
                 "&type=" +
                 setting.TiMu[1],
@@ -768,10 +770,20 @@ function findAnswer() {
         question = filterImg($TiMu.find('.mark_name:eq(0) .colorDeep'));
     }
     console.log($TiMu.find('.mark_name:eq(0) .colorDeep'));
-
+    var secFont = '';
+    if($TiMu.find(".font-cxsecret").length != 0){
+        secFont = $("style[type='text/css']").text().match(/'(data:application\/font-ttf;.*?)'/)[1];
+    }
+    // 回传答案用以后端命中
+    var answers = $TiMu.find("a"),
+        answersText='';
+    for(var i=0;i<answers.length;i++){
+        answersText += ('#'+filterImg(answers.eq(i)));
+    }
     GM_xmlhttpRequest({
-        method: 'GET',
-        url: api+encodeURIComponent(question) ,
+        method: "POST",
+        url: host+'/encHashTopic',
+        data:'question='+encodeURIComponent(question)+'&answers='+encodeURIComponent(answersText)+'&secFont='+encodeURIComponent(secFont)+'&type='+type,
         timeout: setting.time,
         onload: function (xhr) {
             if (!setting.loop) {
@@ -779,6 +791,12 @@ function findAnswer() {
                 var obj = $.parseJSON(xhr.responseText) || {};
                 obj.answer = obj.data;
                 if (obj.code) {
+                    if (secFont != ""){
+                        question = obj.topic
+                    }else{
+                     obj.origin_ans = obj.answer
+                    }
+
                     setting.div.children('div:eq(0)').text('正在搜索答案...');
                     var td = '<td style="border: 1px solid;',
                         answer = String(obj.answer).replace(/&/g, '&').replace(/<(?!img)/g, '<');
@@ -787,7 +805,7 @@ function findAnswer() {
                         '<tr>' +
                         td + ' text-align: center;">' + $TiMu.find('.Zy_TItle:eq(0) i').text().trim() + '</td>' +
                         td + '" title="点击可复制">' + (question.match('<img') ? question : question.replace(/&/g, '&').replace(/</g, '<')) + '</td>' +
-                        td + '" title="点击可复制">' + (/^http/.test(answer) ? obj.answer : '') + answer + '</td>' +
+                        td + '" title="点击可复制">' + obj.origin_ans + '</td>' +
                         '</tr>'
                     ).appendTo(setting.div.find('tbody')).css('background-color', fillAnswer($TiMu.find('ul:eq(0)').find('li'), obj, type) ? '' : 'rgba(0, 150, 136, 0.6)');
                     setting.data[setting.num++] = {
