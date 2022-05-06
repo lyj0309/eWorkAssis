@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         超星网课助手/刷课/搜题（支持图片）/考试/all in one(fake题)
 // @namespace    lyj
-// @version      3.4.0
+// @version      3.4.1
 // @description  考试版已经合并，自动答题，视频自动完成，章节测验自动答题提交，自动切换任务点等，开放自定义参数
 // @author       lyj
 // @match        *://*.chaoxing.com/*
@@ -83,7 +83,7 @@ var setting = {
     url = location.pathname,
     top = _self,
     host = "http://ti.fakev.cn";
-    //api = "http://127.0.0.1:8079/hashTopic?question=";
+    //host = "http://127.0.0.1:8079";
 
 var tmpSubmit = 1;
 Object.defineProperty(setting, "auto", {
@@ -792,10 +792,16 @@ function findAnswer() {
                 obj.answer = obj.data;
                 if (obj.code) {
                     if (secFont != ""){
-                        question = obj.topic
+                        if (obj.topic != undefined){
+                            question = obj.topic
+                        }
                     }else{
-                     obj.origin_ans = obj.answer
+                        obj.origin_ans = obj.answer
                     }
+                    if (obj.origin_ans == undefined){
+                         obj.origin_ans = obj.data
+                    }
+
 
                     setting.div.children('div:eq(0)').text('正在搜索答案...');
                     var td = '<td style="border: 1px solid;',
