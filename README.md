@@ -11,7 +11,7 @@
 https://greasyfork.org/zh-CN/scripts/431514
 
 食用教程
-https://www.cnblogs.com/lyj0309/p/12925134.html
+https://ti.fakev.cn/tutorial
 
 ## :warning: 免责声明  
 - 本代码遵循MIT协议，允许**开源/免费使用和引用/修改/衍生代码的开源/免费使用**，不允许**修改和衍生的代码作为闭源的商业软件发布和销售**，禁止**使用本代码盈利**，以此代码为基础的程序**必须**同样遵守协议  
