@@ -663,8 +663,8 @@ function relieveLimit() {
 
 
 function beforeFind() {
-var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>'
-var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="http://2333.pub" target="view_window">自助搜题</a></div>'
+var a = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>做题中....</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="'+host+'" target="view_window">自助搜题</a></div>'
+var b = '<div style="display: flex;margin-bottom: 2px"><div style="font-size: medium;"><span>已暂停搜索</span></div><a class="btn btn-light btn-sm" style="opacity: 0.9;margin-left: 50px" href="'+host+'" target="view_window">自助搜题</a></div>'
 setting.regl = parent.greenligth || $.noop;
 if ($.type(parent._data) == 'array') return setting.regl();
 setting.div = $(
