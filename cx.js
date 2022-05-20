@@ -772,7 +772,11 @@ function findAnswer() {
     console.log($TiMu.find('.mark_name:eq(0) .colorDeep'));
     var secFont = '';
     if($TiMu.find(".font-cxsecret").length != 0){
-        secFont = $("style[type='text/css']").text().match(/'(data:application\/font-ttf;.*?)'/)[1];
+       try {
+            secFont = $("style[type='text/css']").text().match(/'(data:application\/font-ttf;.*?)'/)[1];
+       }catch {
+           secFont=""
+       }
     }
     // 回传答案用以后端命中
     var answers = $TiMu.find("a"),
